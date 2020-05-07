@@ -1,0 +1,41 @@
+#+TITLE: Tactic
+#+DATE: 2020-05-07
+#+STARTUP: showall
+
+Tactic is a small Scheme like langauge in one file.
+
+** Syntax
+
+Instead of parenthesis Tactic use brackets. Characters and strings are
+delimited by the usual single and double quotes. Quoted (literal) list
+are lists that begin with a leading l, quasiquoted list begin with a
+leading q, and unquoted expressions begin with a leading $. Lambdas
+begin with a leading ^. The idenity function has the following form:
+
+#+begin_src text
+  ^[x x]
+#+end_src
+
+
+A function is a list that's car is the formal parameter list and the
+cdr is the body, when the formal parameters is a list the function
+takes multiple arguments:
+
+#+begin_src text
+^[[a b] [fn a b]]
+#+end_src
+
+
+Here are some valid Tactic definitions:
+
+#+begin_src text
+  [def a 1]
+  [def b 2]
+  [def c ^[[a b] [cat a b]]]
+  [def d l[1 2 3]]
+  [def e q[$a $b 3]]
+  [def f ^[x [pow x 5]]
+  [def g 'c']
+  [def h "hello"]
+  [def i 3.14]
+#+end_src
