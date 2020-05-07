@@ -1,7 +1,7 @@
 all: tt
 
 tt: tactic.c
-	cc -g -ledit -ltermcap tactic.c -o tt
+	cc -g tactic.c -o tt
 
 clean:
 	rm tt

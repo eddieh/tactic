@@ -29,7 +29,7 @@
  *     [def i 3.14]
  */
 
-#include <histedit.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,7 +39,6 @@
 
 
 #define PROMPT "tt> "
-#define PROMPTLEN 4
 #define BUFLEN 1024
 
 #define EOF (-1)
@@ -387,40 +386,26 @@ struct Interpreter *Interpreter_alloc()
     return interp;
 }
 
-
-char *prompt(EditLine *el)
+int interactive(struct Interpreter *interp)
 {
-    return "tt> ";
-}
-
-int interactive(struct Interpreter *interp, char *progn)
-{
-    EditLine *el;
-    History *hist;
-    HistEvent ev;
-    const char *line;
-    int count;
+    char line[BUFLEN];
+    ssize_t count, out;
 
     interp->stream = Stream_alloc();
 
-    el = el_init(progn, stdin, stdout, stderr);
-    if (!el) {
-        fprintf(stderr, "editline could not be initialized\n");
-        goto cleanup;
-    }
-    el_set(el, EL_PROMPT, &prompt);
-    el_set(el, EL_EDITOR, "emacs");
-
-    hist = history_init();
-    if (!hist) {
-        fprintf(stderr, "history could not be initialized\n");
-        goto cleanup;
-    }
-    history(hist, &ev, H_SETSIZE, 800);
-    el_set(el, EL_HIST, history, hist);
-
     for (;;) {
-        line = el_gets(el, &count);
+        out = write(STDOUT_FILENO, PROMPT, sizeof(PROMPT) - 1);
+        if (out == -1) {
+            perror("write fail");
+            exit(1);
+        }
+
+        count = read(STDIN_FILENO, line, BUFLEN);
+        if (count == -1) {
+            perror("read fail");
+            exit(1);
+        }
+        line[count] = 0;
 
         if (strcmp(line, "quit\n") == 0)
             break;
@@ -428,14 +413,7 @@ int interactive(struct Interpreter *interp, char *progn)
         struct Token *start = Stream_setup(interp->stream, -1, line, count);
         struct Token *end = Stream_tokenize(interp->stream);
         Token_dump_tokens(start);
-
-        if (count > 0)
-            history(hist, &ev, H_ENTER, line);
     }
-
-cleanup:
-    if (hist) history_end(hist);
-    if (el) el_end(el);
 
     return 1;
 }
@@ -444,7 +422,7 @@ cleanup:
 int main(int argc, char **argv)
 {
     struct Interpreter *interp = Interpreter_alloc();
-    interactive(interp, argv[0]);
+    interactive(interp);
 
     return 0;
 }
