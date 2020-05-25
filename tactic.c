@@ -258,7 +258,57 @@ repeat:
 int Stream_get_char_token(struct Stream *strm, int c, int next)
 {
     char buf[5];
-    // read bytes until '
+    int len = 0;
+
+    // read bytes until ', but handle \' and \\ as well as other
+    // escape sequences
+    buf[len] = next;
+    for (;;) {
+        if (next == '\'') {
+            next = Stream_next(strm);
+            break;
+        }
+        if (len >= 4)
+            break;
+        if (next == '\\')
+            switch ((next = Stream_next(strm))) {
+            case 'a':
+                next = '\a';
+                break;
+            case 'b':
+                next = '\b';
+                break;
+            case 'f':
+                next = '\f';
+                break;
+            case 'n':
+                next = '\n';
+                break;
+            case 'r':
+                next = '\r';
+                break;
+            case 't':
+                next = '\t';
+                break;
+            case 'v':
+                next = '\v';
+                break;
+            case '\\':
+            case '\'':
+            case '\"':
+                break;
+            }
+        buf[len] = next;
+        len++;
+        next = Stream_next(strm);
+    }
+    buf[len] = 0;
+
+    // handle character exceeds 4 bytes
+
+    strm->token->type = TOK_CHAR;
+    strm->token->value = String_from_buffer(buf, len);
+
     return next;
 }
 
