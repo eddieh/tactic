@@ -255,6 +255,38 @@ repeat:
     goto repeat;
 }
 
+int read_escape_seq(int c)
+{
+    switch (c) {
+    case 'a':
+        c = '\a';
+        break;
+    case 'b':
+        c = '\b';
+        break;
+    case 'f':
+        c = '\f';
+        break;
+    case 'n':
+        c = '\n';
+        break;
+    case 'r':
+        c = '\r';
+        break;
+    case 't':
+        c = '\t';
+        break;
+    case 'v':
+        c = '\v';
+        break;
+    case '\\':
+    case '\'':
+    case '\"':
+        break;
+    }
+    return c;
+}
+
 int Stream_get_char_token(struct Stream *strm, int c, int next)
 {
     char buf[5];
@@ -271,40 +303,14 @@ int Stream_get_char_token(struct Stream *strm, int c, int next)
         if (len >= 4)
             break;
         if (next == '\\')
-            switch ((next = Stream_next(strm))) {
-            case 'a':
-                next = '\a';
-                break;
-            case 'b':
-                next = '\b';
-                break;
-            case 'f':
-                next = '\f';
-                break;
-            case 'n':
-                next = '\n';
-                break;
-            case 'r':
-                next = '\r';
-                break;
-            case 't':
-                next = '\t';
-                break;
-            case 'v':
-                next = '\v';
-                break;
-            case '\\':
-            case '\'':
-            case '\"':
-                break;
-            }
+            next = read_escape_seq(Stream_next(strm));
         buf[len] = next;
         len++;
         next = Stream_next(strm);
     }
     buf[len] = 0;
 
-    // handle character exceeds 4 bytes
+    // TODO: handle character exceeds 4 bytes
 
     strm->token->type = TOK_CHAR;
     strm->token->value = String_from_buffer(buf, len);
@@ -315,7 +321,31 @@ int Stream_get_char_token(struct Stream *strm, int c, int next)
 int Stream_get_str_token(struct Stream *strm, int c, int next)
 {
     char buf[1028];
-    // read bytes until "
+    int len = 0;
+
+    // read bytes until ", but handle \' and \\ as well as other
+    // escape sequences
+    buf[len] = next;
+    for (;;) {
+        if (next == '\"') {
+            next = Stream_next(strm);
+            break;
+        }
+        if (len >= sizeof(buf))
+            break;
+        if (next == '\\')
+            next = read_escape_seq(Stream_next(strm));
+        buf[len] = next;
+        len++;
+        next = Stream_next(strm);
+    }
+    buf[len] = 0;
+
+    // TODO: handle string exceeds maximum length
+
+    strm->token->type = TOK_STR;
+    strm->token->value = String_from_buffer(buf, len);
+
     return next;
 }
 
@@ -345,7 +375,7 @@ int Stream_get_ident_token(struct Stream *strm, int c, int next)
     }
     buf[len] = 0;
 
-    // handle ident exceeds maximum length
+    // TODO: handle ident exceeds maximum length
 
     strm->token->type = TOK_IDENT;
     strm->token->value = String_from_buffer(buf, len);
