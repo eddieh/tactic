@@ -349,10 +349,34 @@ int Stream_get_str_token(struct Stream *strm, int c, int next)
     return next;
 }
 
+// valid numbers:
+//   12    100.1    1/3    56%
+//   0x1a1c    0b01010    10^3
+//   34e13    3+6i    3i+4j+4k
+//   102,000
 int Stream_get_num_token(struct Stream *strm, int c, int next)
 {
     char buf[1028];
-    // reead bytes until <ws> or ]
+    int len = 1;
+
+    // read bytes until <ws> or ]
+    buf[0] = c;
+    for (;;) {
+        if (isspace(next) || next == TOK_END)
+            break;
+        if (len >= sizeof(buf))
+            break;
+        buf[len] = next;
+        len++;
+        next = Stream_next(strm);
+    }
+    buf[len] = 0;
+
+    // TODO: handle number exceeds maximum lenght
+
+    strm->token->type = TOK_NUM;
+    strm->token->value = String_from_buffer(buf, len);
+
     return next;
 }
 
