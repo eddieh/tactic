@@ -44,15 +44,20 @@
 #define EOF (-1)
 
 enum Type {
+    IdentType,
     StringType,
+    CharType,
     IntegerType,
     FloatType,
     PairType,
+    LListType,
+    QListType,
+    FNType,
 };
 
 
 struct Pair {
-    unsigned flags;
+    enum Type type;
     union {
         struct {
             char *sval;
@@ -66,6 +71,10 @@ struct Pair {
         };
     };
 };
+
+struct Pair EmptyList;
+#define isNil(x) ((x) == &EmptyList)
+#define Nil (&EmptyList)
 
 enum TokenType {
     TOK_STRM_START,
@@ -115,7 +124,10 @@ struct Stream {
 
 struct Interpreter {
     struct Stream *stream;
+    struct Token *currtoken;
 };
+
+struct Pair *parse(struct Interpreter *interp);
 
 struct String *String_alloc()
 {
@@ -480,6 +492,7 @@ struct Token *Stream_setup(struct Stream *strm, int fd, char *buf, size_t size)
 	start = Token_alloc();
 	start->type = TOK_STRM_START;
 	strm->tokenlist = &start->next;
+    strm->start = start;
 
 	return start;
 }
@@ -487,7 +500,140 @@ struct Token *Stream_setup(struct Stream *strm, int fd, char *buf, size_t size)
 struct Interpreter *Interpreter_alloc()
 {
     struct Interpreter *interp = malloc(sizeof(struct Interpreter));
+    interp->stream = NULL;
+    interp->currtoken = NULL;
     return interp;
+}
+
+struct Pair *pair_alloc(struct Pair *car, struct Pair *cdr)
+{
+    struct Pair *pr = malloc(sizeof(struct Pair));
+    pr->type = PairType;
+    pr->car = car;
+    pr->cdr = cdr;
+    return pr;
+}
+
+struct Pair *ident_alloc(struct Token *tok)
+{
+    struct Pair *pr = malloc(sizeof(struct Pair));
+    pr->type = IdentType;
+    pr->sval = tok->value->sval;
+    pr->len = tok->value->len;
+    return pr;
+}
+
+struct Token *next(struct Interpreter *interp)
+{
+    if (!interp->currtoken)
+        interp->currtoken = interp->stream->start;
+    else
+        interp->currtoken = interp->currtoken->next;
+    return interp->currtoken;
+}
+
+struct Token *peek(struct Interpreter *interp)
+{
+    /* if (!interp->currtoken) */
+    /*     interp->currtoken = interp->stream->start; */
+    return interp->currtoken->next;
+}
+
+struct Pair *parse_num(struct Interpreter *interp)
+{
+    return Nil;
+}
+
+struct Pair *parse_char(struct Interpreter *interp)
+{
+    return Nil;
+}
+
+
+struct Pair *parse_str(struct Interpreter *interp)
+{
+    return Nil;
+}
+
+struct Pair *parse_ident(struct Interpreter *interp)
+{
+    return Nil;
+}
+
+struct Pair *parse_fn(struct Interpreter *interp)
+{
+    return Nil;
+}
+
+struct Pair *parse_qlist(struct Interpreter *interp)
+{
+    return Nil;
+}
+
+struct Pair *parse_llist(struct Interpreter *interp)
+{
+    return Nil;
+}
+
+struct Pair *parse_list(struct Interpreter *interp)
+{
+    struct Pair *head = pair_alloc(Nil, Nil);
+    struct Pair *pr = head;
+    struct Token *tok;
+    for (;;) {
+        tok = peek(interp);
+        if (tok->type == TOK_END) {
+            pr->cdr = Nil;
+            break;
+        }
+        pr->car = parse(interp);
+        pr->cdr = pair_alloc(Nil, Nil);
+        pr = pr->cdr;
+    }
+    return head;
+}
+
+struct Pair *parse(struct Interpreter *interp)
+{
+    struct Token *tok = next(interp);
+    struct Pair *pr;
+
+    switch (tok->type) {
+    case TOK_STRM_START:
+        pr = pair_alloc(parse(interp), Nil);//parse(interp));
+        break;
+    case TOK_LST:
+        pr = parse_list(interp);
+        break;
+    case TOK_LLST:
+        pr = parse_llist(interp);
+        break;
+    case TOK_QLST:
+        pr = parse_qlist(interp);
+        break;
+    case TOK_FN:
+        pr = parse_fn(interp);
+        break;
+    case TOK_IDENT:
+        pr = ident_alloc(tok);
+        break;
+    case TOK_STR:
+        pr = parse_str(interp);
+        break;
+    case TOK_CHAR:
+        pr = parse_char(interp);
+        break;
+    case TOK_NUM:
+        pr = parse_num(interp);
+        break;
+    case TOK_END:
+    case TOK_STRM_END:
+    default:
+        pr = Nil;
+        break;
+    }
+
+    return pr;
 }
 
 int interactive(struct Interpreter *interp)
@@ -517,6 +663,8 @@ int interactive(struct Interpreter *interp)
         struct Token *start = Stream_setup(interp->stream, -1, line, count);
         struct Token *end = Stream_tokenize(interp->stream);
         Token_dump_tokens(start);
+
+        struct Pair *lst = parse(interp);
     }
 
     return 1;
