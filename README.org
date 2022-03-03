@@ -2,17 +2,20 @@
 #+DATE: 2020-05-07
 #+STARTUP: showall
 
+[[./logo.png]]
+
 Tactic is a small Scheme like langauge in one file.
 
 ** Syntax
 
-Instead of parenthesis Tactic use brackets. Characters and strings are
-delimited by the usual single and double quotes. Quoted (literal) list
-are lists that begin with a leading l, quasiquoted list begin with a
-leading q, and unquoted expressions begin with a leading $. Lambdas
-begin with a leading ^. The idenity function has the following form:
+Instead of parenthesis, Tactic use brackets. Characters and strings
+are delimited by the usual single and double quotes. Quoted (literal)
+list are lists begin with a leading =l=, quasiquoted list begin with a
+leading =q=, and unquoted expressions begin with a leading =$=.
+Lambdas begin with a leading =^=. The idenity function has the
+following form:
 
-#+begin_src text
+#+begin_src
   ^[x x]
 #+end_src
 
@@ -21,10 +24,9 @@ A function is a list that's car is the formal parameter list and the
 cdr is the body, when the formal parameters is a list the function
 takes multiple arguments:
 
-#+begin_src text
+#+begin_src
 ^[[a b] [fn a b]]
 #+end_src
-
 
 Here are some valid Tactic definitions:
 
@@ -39,3 +41,16 @@ Here are some valid Tactic definitions:
   [def h "hello"]
   [def i 3.14]
 #+end_src
+
+** Rich Numbers
+
+Since Tactic is Scheme like (non-algebraic) and does not use certain
+characters for syntax it supprts rich number literals that are written
+naturally. In Tactic these are all valid numbers: =12=, =100.1=,
+=1/3=, =56%=, =0x1a1c=, =0b01010=, =10^3=, =34e13=, =3+6i=,
+=3i+4j+4k=, =102,010,333=.
+
+** Explicit lexing and parsing steps
+
+Seperate and explicit steps for lexing and parsing to support precise
+and detailed error messages.

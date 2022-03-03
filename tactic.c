@@ -1,10 +1,10 @@
 /*
  * Tactic is a small Scheme like langauge in one file.
  *
- * Instead of parenthesis Tactic use brackets. Characters and strings
+ * Instead of parenthesis, Tactic use brackets. Characters and strings
  * are delimited by the usual single and double quotes. Quoted
- * (literal) list are lists that begin with a leading l, quasiquoted
- * list begin with a leading q, and unquoted expressions begin with a
+ * (literal) list are lists begin with a leading l, quasiquoted list
+ * begin with a leading q, and unquoted expressions begin with a
  * leading $. Lambdas begin with a leading ^. The idenity function has
  * the following form:
  *
